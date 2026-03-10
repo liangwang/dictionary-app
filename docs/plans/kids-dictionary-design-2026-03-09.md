@@ -1,5 +1,9 @@
 # Kids Dictionary App — Design
 
+## Status
+
+**Implemented** — deployed to https://dictionary-app-orcin-pi.vercel.app/
+
 ## Goal
 
 A kid-friendly (grades 3-5) dictionary web app. Minimalist, no distractions, visually warm, easy to tap on tablets.
