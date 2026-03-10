@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>English Dictionary</title>
     <style>
         :root {
@@ -17,7 +17,8 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent; /* Removes the grey tap flash on iOS */
         }
 
         body {
@@ -27,39 +28,41 @@
             justify-content: center;
             align-items: flex-start;
             min-height: 100vh;
-            padding: 40px 20px;
+            padding: 20px;
         }
 
         .container {
             background-color: var(--card-bg);
             width: 100%;
-            max-width: 500px;
-            padding: 30px;
-            border-radius: 12px;
+            max-width: 600px; /* Slightly wider for tablet screens */
+            padding: 30px 20px;
+            border-radius: 16px; /* Softer corners for a modern app feel */
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-top: 5vh;
         }
 
         h1 {
             text-align: center;
-            margin-bottom: 20px;
-            font-size: 1.8rem;
+            margin-bottom: 24px;
+            font-size: 2rem;
             color: var(--primary-color);
         }
 
         .search-box {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 30px;
         }
 
         input {
             flex: 1;
-            padding: 12px 16px;
-            font-size: 1rem;
+            padding: 16px; /* Larger touch target */
+            font-size: 16px; /* EXACTLY 16px prevents iOS from auto-zooming when tapped */
             border: 2px solid #e5e7eb;
-            border-radius: 8px;
+            border-radius: 12px;
             outline: none;
             transition: border-color 0.2s;
+            -webkit-appearance: none; /* Removes harsh iOS default input styling */
         }
 
         input:focus {
@@ -67,18 +70,20 @@
         }
 
         button {
-            padding: 12px 20px;
-            font-size: 1rem;
+            padding: 16px 24px; /* Larger touch target */
+            font-size: 16px;
             background-color: var(--primary-color);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
-            font-weight: bold;
-            transition: background-color 0.2s;
+            font-weight: 600;
+            touch-action: manipulation; /* Speeds up tap registration on touch screens */
+            transition: background-color 0.2s, transform 0.1s;
         }
 
-        button:hover {
+        button:active {
+            transform: scale(0.96); /* Subtle "press" animation for touch feedback */
             background-color: #357abd;
         }
 
@@ -94,55 +99,79 @@
         }
 
         .word-title {
-            font-size: 2rem;
+            font-size: 2.2rem;
             text-transform: capitalize;
+            letter-spacing: -0.5px;
         }
 
         .phonetic {
             color: var(--primary-color);
-            font-size: 1.1rem;
-            margin-bottom: 20px;
+            font-size: 1.2rem;
+            margin-bottom: 24px;
         }
 
         .part-of-speech {
             font-weight: bold;
             font-style: italic;
             color: var(--text-main);
-            margin-top: 20px;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 5px;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #f3f4f6;
+            padding-bottom: 8px;
+            font-size: 1.1rem;
         }
 
         .definitions {
-            list-style-type: disc;
-            padding-left: 20px;
+            list-style-type: none; /* Removed bullets for a cleaner mobile look */
+            padding-left: 0;
             color: var(--text-muted);
         }
 
         .definitions li {
-            margin-bottom: 8px;
-            line-height: 1.5;
+            margin-bottom: 12px;
+            line-height: 1.6;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        /* Custom subtle bullet points */
+        .definitions li::before {
+            content: "•";
+            color: var(--primary-color);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
         }
 
         .error {
             text-align: center;
             color: #ef4444;
             font-weight: bold;
+            padding: 20px;
+            background: #fef2f2;
+            border-radius: 12px;
         }
 
         .loading {
             text-align: center;
             color: var(--text-muted);
+            font-size: 1.1rem;
+            padding: 20px;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Dictionary App</h1>
+        <h1>Dictionary</h1>
         <div class="search-box">
-            <input type="text" id="word-input" placeholder="Type a word (e.g., hello)..." autocomplete="off">
+            <input type="search" 
+                   id="word-input" 
+                   placeholder="Type a word..." 
+                   autocomplete="off" 
+                   autocorrect="off" 
+                   autocapitalize="none" 
+                   spellcheck="false">
             <button id="search-btn">Search</button>
         </div>
         <div id="result" class="result-container">
@@ -154,49 +183,41 @@
         const searchBtn = document.getElementById('search-btn');
         const resultContainer = document.getElementById('result');
 
-        // Trigger search when clicking the button
         searchBtn.addEventListener('click', fetchDictionaryData);
 
-        // Trigger search when pressing 'Enter' on the keyboard
         inputField.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
+                e.preventDefault(); // Prevents default form submission behavior
                 fetchDictionaryData();
             }
         });
 
         async function fetchDictionaryData() {
             const word = inputField.value.trim();
-            
-            // Don't search if the input is empty
             if (!word) return;
 
-            // Show loading state
-            resultContainer.innerHTML = `<p class="loading">Searching for "${word}"...</p>`;
+            // CRITICAL FOR IPAD: Force the on-screen keyboard to dismiss
+            inputField.blur();
+
+            resultContainer.innerHTML = `<p class="loading">Searching...</p>`;
 
             try {
-                // Fetch data from the Free Dictionary API
                 const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-                
-                if (!response.ok) {
-                    throw new Error("Word not found");
-                }
+                if (!response.ok) throw new Error("Word not found");
 
                 const data = await response.json();
                 displayResult(data[0]);
-
             } catch (error) {
-                // Handle errors (like word not existing)
                 resultContainer.innerHTML = `
                     <div class="error">
-                        <p>Oops! We couldn't find the word "${word}".</p>
-                        <p style="font-size: 0.9rem; margin-top: 5px;">Please check the spelling and try again.</p>
+                        <p>Oops! We couldn't find "${word}".</p>
+                        <p style="font-size: 0.9rem; margin-top: 5px; font-weight: normal;">Please check the spelling and try again.</p>
                     </div>
                 `;
             }
         }
 
         function displayResult(data) {
-            // Extract the word and phonetic spelling
             const word = data.word;
             const phonetic = data.phonetic || (data.phonetics.find(p => p.text) ? data.phonetics.find(p => p.text).text : "");
 
@@ -207,7 +228,6 @@
                 ${phonetic ? `<p class="phonetic">${phonetic}</p>` : ''}
             `;
 
-            // Loop through the different parts of speech (noun, verb, etc.)
             data.meanings.forEach(meaning => {
                 html += `
                     <div class="meaning-group">
@@ -215,7 +235,6 @@
                         <ul class="definitions">
                 `;
 
-                // Limit to the first 3 definitions per part of speech to keep it clean
                 meaning.definitions.slice(0, 3).forEach(def => {
                     html += `<li>${def.definition}</li>`;
                 });
@@ -226,7 +245,6 @@
                 `;
             });
 
-            // Update the webpage with the generated HTML
             resultContainer.innerHTML = html;
         }
     </script>
